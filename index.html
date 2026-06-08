@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DNA Soft — Prospection BCE</title>
+<meta name="description" content="Trouvez les entreprises belges récemment créées (6 derniers jours) par code postal." />
+<style>
+  :root{
+    --bg:#070a14; --bg2:#0d1326; --card:rgba(255,255,255,.04);
+    --stroke:rgba(255,255,255,.10); --txt:#eef2ff; --muted:#9aa6c4;
+    --accent:#6ea8ff; --accent2:#9d7bff; --ok:#39d98a; --err:#ff6b7d;
+    --radius:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--txt); background:var(--bg); overflow-x:hidden;
+    display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;
+  }
+  /* animated aurora background */
+  .aurora{position:fixed; inset:-30vmax; z-index:0; filter:blur(70px); opacity:.65}
+  .aurora span{position:absolute; width:55vmax; height:55vmax; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, var(--accent), transparent 60%); animation:drift 18s ease-in-out infinite}
+  .aurora span:nth-child(2){background:radial-gradient(circle at 70% 40%, var(--accent2), transparent 60%); left:40%; top:20%; animation-duration:24s; animation-direction:reverse}
+  .aurora span:nth-child(3){background:radial-gradient(circle at 50% 60%, #2bd9c9, transparent 60%); left:20%; top:45%; animation-duration:30s}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(12vmax,-8vmax) scale(1.15)}66%{transform:translate(-10vmax,9vmax) scale(.9)}}
+  /* subtle grid */
+  .grid{position:fixed; inset:0; z-index:0; opacity:.05;
+    background-image:linear-gradient(var(--stroke) 1px,transparent 1px),linear-gradient(90deg,var(--stroke) 1px,transparent 1px);
+    background-size:46px 46px; mask-image:radial-gradient(circle at 50% 40%,#000 30%,transparent 75%)}
+
+  .card{
+    position:relative; z-index:2; width:100%; max-width:480px;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    border:1px solid var(--stroke); border-radius:var(--radius);
+    padding:38px 34px 30px; backdrop-filter:blur(18px);
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08);
+    animation:rise .8s cubic-bezier(.2,.7,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(22px) scale(.98)}to{opacity:1;transform:none}}
+
+  .brand{display:flex; align-items:center; gap:11px; margin-bottom:26px}
+  .logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 8px 22px -6px var(--accent2)}
+  .logo svg{width:22px;height:22px}
+  .brand b{font-size:15px;letter-spacing:.3px}
+  .brand small{display:block;color:var(--muted);font-size:11.5px;font-weight:500;letter-spacing:.4px}
+
+  h1{font-size:25px; line-height:1.18; margin:0 0 8px; letter-spacing:-.4px}
+  h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted); font-size:14px; line-height:1.55; margin:0 0 26px}
+
+  form{display:flex; flex-direction:column; gap:14px}
+  .field{position:relative}
+  .field label{position:absolute; left:18px; top:16px; color:var(--muted); font-size:15px; pointer-events:none; transition:.18s; letter-spacing:2px}
+  input{
+    width:100%; padding:26px 18px 12px; font-size:22px; letter-spacing:6px; font-weight:600;
+    color:var(--txt); background:rgba(255,255,255,.04); border:1.5px solid var(--stroke);
+    border-radius:14px; outline:none; transition:.2s; text-align:left;
+  }
+  input:focus{border-color:var(--accent); background:rgba(110,168,255,.07); box-shadow:0 0 0 4px rgba(110,168,255,.12)}
+  input:focus + label, input:not(:placeholder-shown) + label{top:8px; font-size:10.5px; letter-spacing:1.5px; color:var(--accent)}
+
+  button{
+    margin-top:4px; padding:16px; font-size:15.5px; font-weight:700; letter-spacing:.3px; color:#08101f; cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); border:0; border-radius:14px;
+    transition:transform .15s, box-shadow .25s, filter .2s; box-shadow:0 16px 34px -14px var(--accent2);
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  button:hover{transform:translateY(-2px); filter:brightness(1.06)}
+  button:active{transform:translateY(0)}
+  button:disabled{cursor:not-allowed; filter:grayscale(.4) brightness(.8); transform:none; box-shadow:none}
+  .spinner{width:17px;height:17px;border:2.5px solid rgba(8,16,31,.35);border-top-color:#08101f;border-radius:50%;animation:spin .7s linear infinite;display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .note{margin-top:18px; font-size:12px; color:var(--muted); line-height:1.5; text-align:center}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;justify-content:center}
+  .chip{font-size:11.5px;color:var(--muted);border:1px solid var(--stroke);padding:5px 11px;border-radius:999px;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02)}
+  .chip:hover{color:var(--txt);border-color:var(--accent);background:rgba(110,168,255,.08)}
+
+  /* status panel */
+  .status{margin-top:20px; border-radius:14px; padding:0 16px; max-height:0; overflow:hidden; opacity:0;
+    border:1px solid transparent; transition:max-height .4s ease, opacity .35s, padding .4s, border-color .35s}
+  .status.show{max-height:260px; opacity:1; padding:16px}
+  .status.ok{border-color:rgba(57,217,138,.35); background:rgba(57,217,138,.07)}
+  .status.err{border-color:rgba(255,107,125,.35); background:rgba(255,107,125,.07)}
+  .status h3{margin:0 0 6px; font-size:14.5px; display:flex; align-items:center; gap:8px}
+  .status.ok h3{color:var(--ok)} .status.err h3{color:var(--err)}
+  .status p{margin:0; font-size:13px; color:var(--muted); line-height:1.55}
+  .pulse{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(57,217,138,.5)}70%{box-shadow:0 0 0 9px rgba(57,217,138,0)}100%{box-shadow:0 0 0 0 rgba(57,217,138,0)}}
+
+  footer{position:fixed; bottom:14px; left:0; right:0; text-align:center; z-index:2; color:var(--muted); font-size:11px; letter-spacing:.4px}
+</style>
+</head>
+<body>
+  <div class="aurora"><span></span><span></span><span></span></div>
+  <div class="grid"></div>
+
+  <main class="card">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#08101f" stroke-width="2.2" stroke-linecap="round">
+          <path d="M7 4c0 6 10 10 10 16M17 4c0 6-10 10-10 16"/><path d="M8.5 8h7M8.5 16h7"/>
+        </svg>
+      </div>
+      <div><b>DNA Soft</b><small>PROSPECTION BCE · BELGIQUE</small></div>
+    </div>
+
+    <h1>Nouvelles entreprises<br><span class="grad">par code postal</span></h1>
+    <p class="sub">Entrez un code postal belge. Nous recherchons toutes les sociétés <b>créées durant les 6 derniers jours</b>, filtrées et scorées automatiquement. Le résultat vous est envoyé par e-mail &amp; Slack.</p>
+
+    <form id="form" autocomplete="off">
+      <div class="field">
+        <input id="cp" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder=" " required />
+        <label for="cp">CODE POSTAL</label>
+      </div>
+      <button id="btn" type="submit"><span class="spinner" id="sp"></span><span id="btxt">Lancer la prospection</span></button>
+    </form>
+
+    <div class="chips" id="chips">
+      <span class="chip" data-cp="1000">1000 Bruxelles</span>
+      <span class="chip" data-cp="4000">4000 Liège</span>
+      <span class="chip" data-cp="6000">6000 Charleroi</span>
+      <span class="chip" data-cp="5000">5000 Namur</span>
+      <span class="chip" data-cp="7000">7000 Mons</span>
+    </div>
+
+    <div class="status" id="status">
+      <h3 id="stitle"></h3>
+      <p id="smsg"></p>
+    </div>
+
+    <p class="note">Recherche basée sur la Banque-Carrefour des Entreprises (BCE/KBO).</p>
+  </main>
+
+  <footer>© DNA Soft — Prospection automatisée</footer>
+
+<script>
+  // ⚙️ Webhook de production n8n (workflow PUBLIC copie)
+  const WEBHOOK_URL = "https://aiforcestudio.app.n8n.cloud/webhook/prospect-bce";
+
+  const form = document.getElementById('form');
+  const cp = document.getElementById('cp');
+  const btn = document.getElementById('btn');
+  const sp = document.getElementById('sp');
+  const btxt = document.getElementById('btxt');
+  const status = document.getElementById('status');
+  const stitle = document.getElementById('stitle');
+  const smsg = document.getElementById('smsg');
+
+  cp.addEventListener('input', () => { cp.value = cp.value.replace(/\D/g,'').slice(0,4); });
+  document.getElementById('chips').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if(!c) return;
+    cp.value = c.dataset.cp; cp.focus();
+  });
+
+  function show(type, title, msg){
+    status.className = 'status show ' + type;
+    stitle.innerHTML = (type==='ok' ? '<span class="pulse"></span>' : '⚠️ ') + title;
+    smsg.textContent = msg;
+  }
+  function loading(on){
+    btn.disabled = on; sp.style.display = on ? 'inline-block' : 'none';
+    btxt.textContent = on ? 'Recherche en cours…' : 'Lancer la prospection';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = cp.value.trim();
+    if(!/^[0-9]{4}$/.test(code)){ show('err','Code postal invalide','Entrez un code postal belge à 4 chiffres (ex. 1000).'); cp.focus(); return; }
+    loading(true);
+    status.className = 'status';
+    try{
+      const res = await fetch(WEBHOOK_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ post_code: code })
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      show('ok','Recherche lancée pour ' + code,
+        "Les entreprises créées ces 6 derniers jours sont en cours d'analyse. Vous recevrez les prospects qualifiés par e-mail et Slack dans quelques instants.");
+      form.reset();
+    }catch(err){
+      show('err','Échec de l\'envoi', "Le service n'a pas répondu (" + err.message + "). Réessayez dans un instant ou vérifiez que le workflow est actif.");
+    }finally{
+      loading(false);
+    }
+  });
+</script>
+</body>
+</html>
