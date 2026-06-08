@@ -104,8 +104,12 @@
   .status.show{max-height:260px; opacity:1; padding:16px}
   .status.ok{border-color:rgba(57,217,138,.35); background:rgba(57,217,138,.07)}
   .status.err{border-color:rgba(255,107,125,.35); background:rgba(255,107,125,.07)}
+  .status.run{border-color:rgba(255,225,77,.35); background:rgba(255,225,77,.07)}
   .status h3{margin:0 0 6px; font-size:14.5px; display:flex; align-items:center; gap:8px}
-  .status.ok h3{color:var(--ok)} .status.err h3{color:var(--err)}
+  .status.ok h3{color:var(--ok)} .status.err h3{color:var(--err)} .status.run h3{color:var(--accent)}
+  .status .retry{margin-top:10px;display:inline-block;font-size:12.5px;font-weight:700;color:var(--accent);cursor:pointer;border-bottom:1px dashed var(--accent)}
+  .status b.timer{color:var(--txt);font-variant-numeric:tabular-nums}
+  .runspin{width:13px;height:13px;border:2.5px solid rgba(255,225,77,.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
   .status p{margin:0; font-size:13px; color:var(--muted); line-height:1.55}
   .pulse{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 1.6s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(57,217,138,.5)}70%{box-shadow:0 0 0 9px rgba(57,217,138,0)}100%{box-shadow:0 0 0 0 rgba(57,217,138,0)}}
@@ -179,8 +183,10 @@
   <footer>© DNA Soft — Prospection automatisée</footer>
 
 <script>
-  // ⚙️ Webhook de production n8n (workflow PUBLIC copie)
+  // ⚙️ Webhooks de production n8n (workflow PUBLIC copie + suivi)
   const WEBHOOK_URL = "https://aiforcestudio.app.n8n.cloud/webhook/prospect-bce";
+  const STATUS_URL  = "https://aiforcestudio.app.n8n.cloud/webhook/prospect-status";
+  const POLL_MS = 8000; // sondage toutes les 8s, sans limite de durée
 
   const form = document.getElementById('form');
   const cp = document.getElementById('cp');
@@ -191,43 +197,91 @@
   const stitle = document.getElementById('stitle');
   const smsg = document.getElementById('smsg');
 
+  let pollTimer = null, tickTimer = null, startedAt = 0, currentCode = '';
+
   cp.addEventListener('input', () => { cp.value = cp.value.replace(/\D/g,'').slice(0,4); });
   document.getElementById('chips').addEventListener('click', e => {
     const c = e.target.closest('.chip'); if(!c) return;
     cp.value = c.dataset.cp; cp.focus();
   });
 
-  function show(type, title, msg){
+  function fmt(ms){
+    const s = Math.floor(ms/1000), m = Math.floor(s/60), r = s%60;
+    return m>0 ? (m+' min '+String(r).padStart(2,'0')+'s') : (r+'s');
+  }
+  function show(type, titleHtml, msgHtml){
     status.className = 'status show ' + type;
-    stitle.innerHTML = (type==='ok' ? '<span class="pulse"></span>' : '⚠️ ') + title;
-    smsg.textContent = msg;
+    stitle.innerHTML = titleHtml;
+    smsg.innerHTML = msgHtml;
   }
   function loading(on){
     btn.disabled = on; sp.style.display = on ? 'inline-block' : 'none';
     btxt.textContent = on ? 'Recherche en cours…' : 'Lancer la prospection';
   }
+  function stopAll(){ clearInterval(pollTimer); clearInterval(tickTimer); pollTimer=tickTimer=null; }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const code = cp.value.trim();
-    if(!/^[0-9]{4}$/.test(code)){ show('err','Code postal invalide','Entrez un code postal belge à 4 chiffres (ex. 1000).'); cp.focus(); return; }
-    loading(true);
-    status.className = 'status';
+  function renderRunning(){
+    show('run',
+      '<span class="runspin"></span> Recherche en cours…',
+      'Analyse des entreprises créées ces 6 derniers jours (pagination BCE + scoring IA pour <b>'+currentCode+'</b>).<br>Temps écoulé : <b class="timer" id="elapsed">0s</b> — vous pouvez laisser cette page ouverte.');
+  }
+
+  async function poll(execId){
+    try{
+      const r = await fetch(STATUS_URL + '?execId=' + encodeURIComponent(execId), {cache:'no-store'});
+      const d = await r.json();
+      if(d.state === 'done'){
+        stopAll(); loading(false);
+        show('ok','<span class="pulse"></span> Recherche terminée',
+          'La recherche pour <b>'+currentCode+'</b> est terminée en '+fmt(Date.now()-startedAt)+'. Les prospects qualifiés (s\'il y en a) ont été envoyés par <b>e-mail</b>.');
+        return;
+      }
+      if(d.state === 'error'){
+        stopAll(); loading(false);
+        const node = d.node || 'inconnu';
+        const isNode3 = /③|Page 1|HTTP/.test(node);
+        show('err','⚠️ Problème détecté'+(isNode3 ? ' — node ③ (API BCE)' : ''),
+          '<b>'+(d.message||'Erreur inconnue')+'</b><br>Node : '+node+'.'+
+          (isNode3 ? ' L\'API BCE (cbeapi.be) n\'a pas répondu (souvent temporaire).' : '')+
+          '<span class="retry" id="retry">↻ Relancer la recherche</span>');
+        document.getElementById('retry').onclick = () => launch(currentCode);
+        return;
+      }
+      // running : on continue
+    }catch(err){ /* erreur réseau transitoire : on garde le polling */ }
+  }
+
+  async function launch(code){
+    currentCode = code; startedAt = Date.now();
+    stopAll(); loading(true); renderRunning();
+    tickTimer = setInterval(()=>{ const el=document.getElementById('elapsed'); if(el) el.textContent = fmt(Date.now()-startedAt); }, 1000);
     try{
       const res = await fetch(WEBHOOK_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ post_code: code })
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
-      show('ok','Recherche lancée pour ' + code,
-        "Les entreprises créées ces 6 derniers jours sont en cours d'analyse. Vous recevrez les prospects qualifiés par e-mail et Slack dans quelques instants.");
-      form.reset();
+      const data = await res.json();
+      const execId = data.execId;
+      if(!execId){ // pas d'execId : on reste sur l'accusé simple
+        stopAll(); loading(false);
+        show('ok','<span class="pulse"></span> Recherche lancée','La recherche pour <b>'+code+'</b> tourne en arrière-plan. Vous recevrez les prospects par e-mail.');
+        return;
+      }
+      poll(execId);                          // premier sondage immédiat
+      pollTimer = setInterval(()=>poll(execId), POLL_MS);
     }catch(err){
-      show('err','Échec de l\'envoi', "Le service n'a pas répondu (" + err.message + "). Réessayez dans un instant ou vérifiez que le workflow est actif.");
-    }finally{
-      loading(false);
+      stopAll(); loading(false);
+      show('err','⚠️ Échec du lancement','Le service n\'a pas répondu ('+err.message+'). Vérifiez que le workflow est actif, puis réessayez.<span class="retry" id="retry">↻ Réessayer</span>');
+      const rt=document.getElementById('retry'); if(rt) rt.onclick=()=>launch(code);
     }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = cp.value.trim();
+    if(!/^[0-9]{4}$/.test(code)){ show('err','⚠️ Code postal invalide','Entrez un code postal belge à 4 chiffres (ex. 1000).'); cp.focus(); return; }
+    launch(code);
   });
 </script>
 </body>
