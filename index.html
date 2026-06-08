@@ -93,7 +93,10 @@
   .chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 11px 12px;justify-content:center}
   .chip{font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted);border:1px solid var(--stroke);padding:4px 9px;border-radius:8px;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02);font-weight:600}
   .chip:hover{color:#08101f;border-color:var(--accent);background:var(--accent)}
-  @media(max-width:520px){.ref-grid{grid-template-columns:1fr}}
+  @media(max-width:520px){
+    body{align-items:flex-start; padding:2rem 18px}
+    .ref-grid{grid-template-columns:1fr}
+  }
 
   /* status panel */
   .status{margin-top:20px; border-radius:14px; padding:0 16px; max-height:0; overflow:hidden; opacity:0;
