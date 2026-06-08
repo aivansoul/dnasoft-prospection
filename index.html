@@ -9,7 +9,7 @@
   :root{
     --bg:#070a14; --bg2:#0d1326; --card:rgba(255,255,255,.04);
     --stroke:rgba(255,255,255,.10); --txt:#eef2ff; --muted:#9aa6c4;
-    --accent:#6ea8ff; --accent2:#9d7bff; --ok:#39d98a; --err:#ff6b7d;
+    --accent:#ffe14d; --accent2:#f5b301; --ok:#39d98a; --err:#ff6b7d;
     --radius:22px;
   }
   *{box-sizing:border-box}
@@ -60,7 +60,7 @@
     color:var(--txt); background:rgba(255,255,255,.04); border:1.5px solid var(--stroke);
     border-radius:14px; outline:none; transition:.2s; text-align:left;
   }
-  input:focus{border-color:var(--accent); background:rgba(110,168,255,.07); box-shadow:0 0 0 4px rgba(110,168,255,.12)}
+  input:focus{border-color:var(--accent); background:rgba(255,225,77,.07); box-shadow:0 0 0 4px rgba(255,225,77,.14)}
   input:focus + label, input:not(:placeholder-shown) + label{top:8px; font-size:10.5px; letter-spacing:1.5px; color:var(--accent)}
 
   button{
@@ -76,9 +76,14 @@
   @keyframes spin{to{transform:rotate(360deg)}}
 
   .note{margin-top:18px; font-size:12px; color:var(--muted); line-height:1.5; text-align:center}
-  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;justify-content:center}
-  .chip{font-size:11.5px;color:var(--muted);border:1px solid var(--stroke);padding:5px 11px;border-radius:999px;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02)}
-  .chip:hover{color:var(--txt);border-color:var(--accent);background:rgba(110,168,255,.08)}
+  .ref{margin-top:22px;border-top:1px solid var(--stroke);padding-top:16px}
+  .ref-head{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:12px}
+  .ref-head span{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:.2px}
+  .ref-group{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
+  .ref-group>b{flex:0 0 86px;font-size:11px;color:var(--muted);font-weight:600;padding-top:6px;text-align:right}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted);border:1px solid var(--stroke);padding:4px 9px;border-radius:8px;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02);font-weight:600}
+  .chip:hover{color:#08101f;border-color:var(--accent);background:var(--accent)}
 
   /* status panel */
   .status{margin-top:20px; border-radius:14px; padding:0 16px; max-height:0; overflow:hidden; opacity:0;
@@ -120,12 +125,29 @@
       <button id="btn" type="submit"><span class="spinner" id="sp"></span><span id="btxt">Lancer la prospection</span></button>
     </form>
 
-    <div class="chips" id="chips">
-      <span class="chip" data-cp="1000">1000 Bruxelles</span>
-      <span class="chip" data-cp="4000">4000 Liège</span>
-      <span class="chip" data-cp="6000">6000 Charleroi</span>
-      <span class="chip" data-cp="5000">5000 Namur</span>
-      <span class="chip" data-cp="7000">7000 Mons</span>
+    <div class="ref" id="chips">
+      <div class="ref-head">Codes postaux référencés <span>· cliquez pour remplir</span></div>
+      <div class="ref-group"><b>Bruxelles</b><div class="chips">
+        <span class="chip" data-cp="1000">1000</span><span class="chip" data-cp="1020">1020</span><span class="chip" data-cp="1030">1030</span><span class="chip" data-cp="1040">1040</span><span class="chip" data-cp="1050">1050</span><span class="chip" data-cp="1060">1060</span><span class="chip" data-cp="1070">1070</span><span class="chip" data-cp="1080">1080</span><span class="chip" data-cp="1081">1081</span><span class="chip" data-cp="1082">1082</span><span class="chip" data-cp="1083">1083</span><span class="chip" data-cp="1090">1090</span><span class="chip" data-cp="1120">1120</span><span class="chip" data-cp="1130">1130</span><span class="chip" data-cp="1140">1140</span><span class="chip" data-cp="1150">1150</span><span class="chip" data-cp="1160">1160</span><span class="chip" data-cp="1170">1170</span><span class="chip" data-cp="1180">1180</span><span class="chip" data-cp="1190">1190</span><span class="chip" data-cp="1200">1200</span><span class="chip" data-cp="1210">1210</span>
+      </div></div>
+      <div class="ref-group"><b>Liège</b><div class="chips">
+        <span class="chip" data-cp="4000">4000</span><span class="chip" data-cp="4020">4020</span><span class="chip" data-cp="4030">4030</span><span class="chip" data-cp="4040">4040</span><span class="chip" data-cp="4100">4100</span><span class="chip" data-cp="4120">4120</span><span class="chip" data-cp="4130">4130</span><span class="chip" data-cp="4900">4900</span>
+      </div></div>
+      <div class="ref-group"><b>Charleroi</b><div class="chips">
+        <span class="chip" data-cp="6000">6000</span><span class="chip" data-cp="6001">6001</span><span class="chip" data-cp="6010">6010</span><span class="chip" data-cp="6020">6020</span><span class="chip" data-cp="6030">6030</span><span class="chip" data-cp="6040">6040</span>
+      </div></div>
+      <div class="ref-group"><b>Namur</b><div class="chips">
+        <span class="chip" data-cp="5000">5000</span><span class="chip" data-cp="5001">5001</span><span class="chip" data-cp="5002">5002</span><span class="chip" data-cp="5003">5003</span>
+      </div></div>
+      <div class="ref-group"><b>Mons</b><div class="chips">
+        <span class="chip" data-cp="7000">7000</span><span class="chip" data-cp="7011">7011</span><span class="chip" data-cp="7012">7012</span>
+      </div></div>
+      <div class="ref-group"><b>Verviers</b><div class="chips">
+        <span class="chip" data-cp="4800">4800</span><span class="chip" data-cp="4820">4820</span>
+      </div></div>
+      <div class="ref-group"><b>Tournai · La Louvière</b><div class="chips">
+        <span class="chip" data-cp="7500">7500</span><span class="chip" data-cp="7100">7100</span>
+      </div></div>
     </div>
 
     <div class="status" id="status">
