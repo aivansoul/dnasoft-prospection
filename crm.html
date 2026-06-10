@@ -67,6 +67,20 @@
   .saved.show{opacity:1}
   a.cbe{color:var(--orange);text-decoration:none;font-weight:700;font-size:11px}
   .empty{padding:40px;text-align:center;color:var(--muted)}
+  /* detail row */
+  .exp{background:#fff;border:1px solid var(--line);border-radius:7px;cursor:pointer;padding:4px 8px;font-size:13px}
+  .exp:hover{border-color:var(--orange)}
+  .detailbox{display:flex;gap:18px;flex-wrap:wrap;padding:14px 10px;background:#f6f8fb;border-radius:10px;margin:4px 0}
+  .dcol{flex:1;min-width:240px}
+  .dcol label{display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .dcol .hint{font-size:11px;color:var(--muted);margin-top:5px}
+  .dcol input,.dcol textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+  .dcol input:focus,.dcol textarea:focus{border-color:var(--orange)}
+  .dcol textarea{min-height:64px;resize:vertical}
+  .dsave{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-width:140px}
+  .savebtn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:13px}
+  .savebtn:hover{background:#0d2b52}
+  td .tel2{color:#0a2240;font-weight:700;font-size:12px;display:block;margin-top:2px}
 </style>
 </head>
 <body>
@@ -183,22 +197,56 @@
     document.getElementById('count').textContent=rows.length+" / "+LEADS.length+" leads";
     const tb=document.getElementById('rows');
     document.getElementById('empty').style.display=rows.length?'none':'block';
+    const esc=s=>(s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     tb.innerHTML=rows.map(l=>{
       const pb=l.priorite==='CHAUD'?'b-chaud':l.priorite==='TIEDE'?'b-tiede':'b-froid';
-      const contact = l.has_email ? `<span class="mail">✉️ ${l.email}</span>` : `<span class="tel">🔴 ${l.phone || "à appeler (pas d'email)"}</span>`;
+      const phoneShown = l.phone_manual || l.phone;
+      const contact = l.has_email
+        ? `<span class="mail">✉️ ${l.email}</span>${phoneShown?`<span class="tel2">📞 ${esc(phoneShown)}</span>`:''}`
+        : (phoneShown ? `<span class="tel">📞 ${esc(phoneShown)}</span>` : `<span class="tel">🔴 à appeler (pas d'email)</span>`);
       const opts=STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
       return `<tr>
-        <td><div class="name">${l.name||'?'}</div><div class="sub">${l.ai_action||''}</div></td>
-        <td>${l.post_code||''}</td>
-        <td><span class="sub">${l.sector||'—'}</span></td>
+        <td><div class="name">${esc(l.name)||'?'}</div><div class="sub">${esc(l.ai_action)}</div></td>
+        <td>${esc(l.post_code)}</td>
+        <td><span class="sub">${esc(l.sector)||'—'}</span></td>
         <td><span class="score">${l.score??'–'}</span></td>
         <td><span class="badge ${pb}">${l.priorite||'—'}</span></td>
         <td>${contact}</td>
         <td><span class="sub">${(l.registration_date||'').slice(0,10)}</span></td>
         <td><select class="status" onchange="updateStatus(${l.id},this.value,this)">${opts}</select> <span class="saved" id="sv${l.id}">✓</span></td>
-        <td>${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''}</td>
-      </tr>`;
+        <td style="white-space:nowrap"><button class="exp" title="Téléphone & notes" onclick="toggleDetail(${l.id})">✏️</button> ${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''}</td>
+      </tr>
+      <tr class="detailrow" id="d${l.id}" style="display:none"><td colspan="9">
+        <div class="detailbox">
+          <div class="dcol">
+            <label>📞 Téléphone(s) — ajout manuel</label>
+            <input id="ph${l.id}" value="${esc(l.phone_manual)}" placeholder="ex. 0470 12 34 56, 02 555 11 22 (plusieurs : virgules)">
+            ${l.phone?`<div class="hint">BCE : ${esc(l.phone)}</div>`:''}
+            ${l.email?`<div class="hint">Email : ${esc(l.email)}</div>`:'<div class="hint">Pas d\'email BCE — à appeler</div>'}
+            ${l.website?`<div class="hint">Web : ${esc(l.website)}</div>`:''}
+          </div>
+          <div class="dcol">
+            <label>📝 Notes libres</label>
+            <textarea id="nt${l.id}" placeholder="Historique d'appel, objections, rendez-vous, contexte…">${esc(l.notes)}</textarea>
+          </div>
+          <div class="dsave">
+            <button class="savebtn" onclick="saveDetail(${l.id})">💾 Enregistrer</button>
+            <span class="saved" id="dsv${l.id}">✓ enregistré</span>
+          </div>
+        </div>
+      </td></tr>`;
     }).join('');
+  }
+  function toggleDetail(id){ const r=document.getElementById('d'+id); if(r) r.style.display = (r.style.display==='none'?'table-row':'none'); }
+  function saveDetail(id){
+    const phone_manual=document.getElementById('ph'+id).value.trim();
+    const notes=document.getElementById('nt'+id).value;
+    fetch(API+"/crm-update",{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:TOKEN,id,phone_manual,notes})})
+      .then(r=>r.json()).then(()=>{
+        const lead=LEADS.find(x=>x.id===id); if(lead){ lead.phone_manual=phone_manual; lead.notes=notes; }
+        const sv=document.getElementById('dsv'+id); sv.classList.add('show'); setTimeout(()=>sv.classList.remove('show'),2000);
+      }).catch(()=>alert("Échec de l'enregistrement"));
   }
 
   function updateStatus(id, status, el){
