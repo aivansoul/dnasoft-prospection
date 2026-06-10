@@ -81,13 +81,42 @@
   .savebtn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:13px}
   .savebtn:hover{background:#0d2b52}
   td .tel2{color:#0a2240;font-weight:700;font-size:12px;display:block;margin-top:2px}
+  /* ===== MOBILE : tableau -> cartes ===== */
+  @media(max-width:720px){
+    header{padding:14px 16px}
+    .wrap{padding:14px}
+    .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
+    .kpi .n{font-size:24px}
+    .cols{gap:10px}
+    .tablewrap{border:none;background:transparent;overflow:visible}
+    table{min-width:0;display:block}
+    thead{display:none}
+    tbody{display:block}
+    tr{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;padding:10px 14px;box-shadow:0 4px 14px -10px rgba(13,35,82,.3)}
+    tr:hover td{background:transparent}
+    td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:none;padding:7px 0;font-size:13.5px;text-align:right}
+    td::before{content:attr(data-label);font-weight:700;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;flex:0 0 auto;text-align:left}
+    td:first-child{border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:3px;display:block;text-align:left}
+    td:first-child::before{display:none}
+    .name{font-size:15px}
+    select.status{flex:1;max-width:62%}
+    tr.detailrow{padding:0;border:none;box-shadow:none;background:transparent;margin-bottom:12px}
+    tr.detailrow td{display:block;padding:0;text-align:left}
+    tr.detailrow td::before{display:none}
+    .detailbox{flex-direction:column;gap:12px}
+    .dsave{min-width:0}
+    .toolbar{gap:8px}
+    .toolbar select,.toolbar input{flex:1 1 45%;min-width:0}
+    .toolbar .count{flex-basis:100%;text-align:right;margin:0}
+  }
 </style>
 </head>
 <body>
 
 <div id="gate">
   <div class="box">
-    <div class="logo"><div class="d">D</div><div style="text-align:left"><b>DNA Soft</b><small>CRM PROSPECTS</small></div></div>
+    <div class="logo"><img src="https://aivansoul.github.io/dnasoft-prospection/assets/logo.png" alt="DNA Soft Solutions" style="height:40px;display:block"></div>
+    <div style="font-size:10px;letter-spacing:2px;color:#6b7a93;font-weight:700;margin:-6px 0 14px">CRM PROSPECTS</div>
     <p style="font-size:13px;color:#6b7a93;margin:0">Entrez votre token d'accès</p>
     <input id="tokenInput" type="password" placeholder="Token d'accès" autocomplete="off" />
     <button class="btn" onclick="login()">Entrer</button>
@@ -97,7 +126,7 @@
 
 <div id="app" style="display:none">
   <header>
-    <div class="logo"><div class="d">D</div><div><b>DNA Soft — CRM</b><small>PROSPECTS BCE · BELGIQUE</small></div></div>
+    <div class="logo"><img src="https://aivansoul.github.io/dnasoft-prospection/assets/logo-white.png" alt="DNA Soft" style="height:30px;display:block"><span style="color:#9fb1cd;font-size:11px;letter-spacing:1.5px;font-weight:700">CRM PROSPECTS</span></div>
     <div class="right">
       <button class="ghost" onclick="load()">↻ Rafraîchir</button>
       <button class="ghost" onclick="logout()">Quitter</button>
@@ -206,15 +235,15 @@
         : (phoneShown ? `<span class="tel">📞 ${esc(phoneShown)}</span>` : `<span class="tel">🔴 à appeler (pas d'email)</span>`);
       const opts=STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
       return `<tr>
-        <td><div class="name">${esc(l.name)||'?'}</div><div class="sub">${esc(l.ai_action)}</div></td>
-        <td>${esc(l.post_code)}</td>
-        <td><span class="sub">${esc(l.sector)||'—'}</span></td>
-        <td><span class="score">${l.score??'–'}</span></td>
-        <td><span class="badge ${pb}">${l.priorite||'—'}</span></td>
-        <td>${contact}</td>
-        <td><span class="sub">${(l.registration_date||'').slice(0,10)}</span></td>
-        <td><select class="status" onchange="updateStatus(${l.id},this.value,this)">${opts}</select> <span class="saved" id="sv${l.id}">✓</span></td>
-        <td style="white-space:nowrap"><button class="exp" title="Téléphone & notes" onclick="toggleDetail(${l.id})">✏️</button> ${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''}</td>
+        <td data-label="Société"><div class="name">${esc(l.name)||'?'}</div><div class="sub">${esc(l.ai_action)}</div></td>
+        <td data-label="Ville">${esc(l.post_code)}</td>
+        <td data-label="Secteur"><span class="sub">${esc(l.sector)||'—'}</span></td>
+        <td data-label="Score"><span class="score">${l.score??'–'}</span></td>
+        <td data-label="Priorité"><span class="badge ${pb}">${l.priorite||'—'}</span></td>
+        <td data-label="Contact">${contact}</td>
+        <td data-label="Créée"><span class="sub">${(l.registration_date||'').slice(0,10)}</span></td>
+        <td data-label="Statut"><select class="status" onchange="updateStatus(${l.id},this.value,this)">${opts}</select> <span class="saved" id="sv${l.id}">✓</span></td>
+        <td data-label="Action" style="white-space:nowrap"><button class="exp" title="Téléphone & notes" onclick="toggleDetail(${l.id})">✏️ Tél/Notes</button> ${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''}</td>
       </tr>
       <tr class="detailrow" id="d${l.id}" style="display:none"><td colspan="9">
         <div class="detailbox">
