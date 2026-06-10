@@ -70,6 +70,8 @@
   /* detail row */
   .exp{background:#fff;border:1px solid var(--line);border-radius:7px;cursor:pointer;padding:4px 8px;font-size:13px}
   .exp:hover{border-color:var(--orange)}
+  .del{background:#fff;border:1px solid var(--line);border-radius:7px;cursor:pointer;padding:4px 8px;font-size:13px}
+  .del:hover{border-color:var(--chaud);background:#fde6e6}
   .detailbox{display:flex;gap:18px;flex-wrap:wrap;padding:14px 10px;background:#f6f8fb;border-radius:10px;margin:4px 0}
   .dcol{flex:1;min-width:240px}
   .dcol label{display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
@@ -235,9 +237,10 @@
       const phoneShown = l.phone_manual || l.phone;
       const gq = encodeURIComponent('"'+(l.name||'')+'" '+(l.city||l.post_code||'')+' Belgique');
       const pdq = encodeURIComponent((l.name||'')+' '+(l.city||l.post_code||''));
-      const contact = l.has_email
-        ? `<span class="mail">✉️ ${l.email}</span>${phoneShown?`<span class="tel2">📞 ${esc(phoneShown)}</span>`:''}`
-        : (phoneShown ? `<span class="tel">📞 ${esc(phoneShown)}</span>` : `<span class="tel">🔴 à appeler (pas d'email)</span>`);
+      let contact = '';
+      if(phoneShown) contact += `<span class="tel2">📞 ${esc(phoneShown)}</span>`;
+      if(l.email) contact += `<span class="mail">✉️ ${esc(l.email)}</span>`;
+      if(!contact) contact = `<span class="tel">🔴 à appeler (pas de contact)</span>`;
       const opts=STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
       return `<tr>
         <td data-label="Société"><div class="name">${esc(l.name)||'?'}</div><div class="sub">${esc(l.ai_action)}</div></td>
@@ -248,7 +251,7 @@
         <td data-label="Contact">${contact}</td>
         <td data-label="Créée"><span class="sub">${(l.registration_date||'').slice(0,10)}</span></td>
         <td data-label="Statut"><select class="status" onchange="updateStatus(${l.id},this.value,this)">${opts}</select> <span class="saved" id="sv${l.id}">✓</span></td>
-        <td data-label="Action" style="white-space:nowrap"><button class="exp" title="Téléphone & notes" onclick="toggleDetail(${l.id})">✏️ Tél/Notes</button> ${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''}</td>
+        <td data-label="Action" style="white-space:nowrap"><button class="exp" title="Téléphone & notes" onclick="toggleDetail(${l.id})">✏️ Tél/Notes</button> ${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''} <button class="del" title="Supprimer ce lead (incohérent)" onclick="deleteLead(${l.id})">🗑️</button></td>
       </tr>
       <tr class="detailrow" id="d${l.id}" style="display:none"><td colspan="9">
         <div class="detailbox">
@@ -289,6 +292,13 @@
       }).catch(()=>alert("Échec de l'enregistrement"));
   }
 
+  function deleteLead(id){
+    const lead=LEADS.find(x=>x.id===id); const name=lead?lead.name:'';
+    if(!confirm('Supprimer définitivement « '+(name||'ce lead')+' » ?\n(à utiliser pour les leads incohérents)')) return;
+    fetch(API+"/crm-delete",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:TOKEN,id})})
+      .then(r=>r.json()).then(()=>{ LEADS=LEADS.filter(x=>x.id!==id); boot(); })
+      .catch(()=>alert("Échec de la suppression"));
+  }
   function updateStatus(id, status, el){
     fetch(API+"/crm-update",{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:TOKEN,id,status,last_contact_at:new Date().toISOString()})})
