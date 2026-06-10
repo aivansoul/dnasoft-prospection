@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DNA Soft — CRM Prospects</title>
+<style>
+  :root{
+    --navy:#0a2240; --navy2:#0d2b52; --orange:#f5a623; --yellow:#f5c800;
+    --bg:#eef1f6; --card:#ffffff; --txt:#13233d; --muted:#6b7a93; --line:#e2e7f0;
+    --chaud:#e23b3b; --tiede:#f5a623; --froid:#7a8aa3; --ok:#2ea36b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  /* ---- login gate ---- */
+  #gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy),#06162c);display:flex;align-items:center;justify-content:center;z-index:50}
+  #gate .box{background:#fff;border-radius:18px;padding:38px 34px;width:340px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);text-align:center}
+  .logo{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:18px}
+  .logo .d{width:40px;height:40px;border-radius:10px;background:var(--navy);display:grid;place-items:center;color:var(--orange);font-weight:900;font-size:22px;font-style:italic}
+  .logo b{font-size:17px;color:var(--navy)} .logo small{display:block;font-size:10px;letter-spacing:1px;color:var(--muted)}
+  #gate input{width:100%;padding:13px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;margin:14px 0;outline:none}
+  #gate input:focus{border-color:var(--orange)}
+  .btn{background:var(--orange);color:var(--navy);border:0;border-radius:10px;padding:13px 18px;font-weight:800;cursor:pointer;width:100%;font-size:15px;transition:.15s}
+  .btn:hover{filter:brightness(1.05)}
+  #gateErr{color:var(--chaud);font-size:12.5px;min-height:16px;margin-top:6px}
+  /* ---- app ---- */
+  header{background:var(--navy);color:#fff;padding:16px 26px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  header .logo .d{background:var(--orange);color:var(--navy)} header .logo b{color:#fff} header .logo small{color:#9fb1cd}
+  header .right{display:flex;gap:10px;align-items:center}
+  .ghost{background:transparent;color:#cdd9ec;border:1px solid #34507e;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px}
+  .ghost:hover{border-color:var(--orange);color:#fff}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px}
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+  .kpi{background:var(--card);border-radius:14px;padding:16px 18px;border:1px solid var(--line);box-shadow:0 4px 14px -10px rgba(13,35,82,.4)}
+  .kpi .n{font-size:30px;font-weight:800;line-height:1}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .kpi.chaud .n{color:var(--chaud)} .kpi.tiede .n{color:var(--orange)} .kpi.froid .n{color:var(--froid)} .kpi.tel .n{color:var(--chaud)}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  .panel{background:var(--card);border-radius:14px;padding:16px 18px;border:1px solid var(--line)}
+  .panel h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--navy)}
+  .bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+  .bar .lab{width:120px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .track{flex:1;background:#eef1f6;border-radius:6px;height:14px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--orange);border-radius:6px}
+  .bar .v{width:34px;text-align:right;font-weight:700}
+  /* toolbar */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .toolbar select,.toolbar input{padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;outline:none}
+  .toolbar .count{margin-left:auto;color:var(--muted);font-size:13px}
+  /* table */
+  .tablewrap{background:var(--card);border-radius:14px;border:1px solid var(--line);overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:840px}
+  th{background:#f6f8fb;color:var(--muted);text-align:left;padding:11px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0}
+  td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
+  tr:hover td{background:#fafbfe}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.5px}
+  .b-chaud{background:#fde6e6;color:var(--chaud)} .b-tiede{background:#fdf0db;color:#b9791a} .b-froid{background:#eef1f6;color:var(--froid)}
+  .score{font-weight:800;font-size:14px}
+  .tel{color:var(--chaud);font-weight:700;white-space:nowrap}
+  .mail{color:var(--navy);font-size:12px}
+  .name{font-weight:700;color:var(--navy)}
+  .sub{color:var(--muted);font-size:11.5px}
+  select.status{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#fff;font-weight:600;cursor:pointer}
+  .saved{color:var(--ok);font-size:11px;opacity:0;transition:.3s}
+  .saved.show{opacity:1}
+  a.cbe{color:var(--orange);text-decoration:none;font-weight:700;font-size:11px}
+  .empty{padding:40px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="box">
+    <div class="logo"><div class="d">D</div><div style="text-align:left"><b>DNA Soft</b><small>CRM PROSPECTS</small></div></div>
+    <p style="font-size:13px;color:#6b7a93;margin:0">Entrez votre token d'accès</p>
+    <input id="tokenInput" type="password" placeholder="Token d'accès" autocomplete="off" />
+    <button class="btn" onclick="login()">Entrer</button>
+    <div id="gateErr"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <div class="logo"><div class="d">D</div><div><b>DNA Soft — CRM</b><small>PROSPECTS BCE · BELGIQUE</small></div></div>
+    <div class="right">
+      <button class="ghost" onclick="load()">↻ Rafraîchir</button>
+      <button class="ghost" onclick="logout()">Quitter</button>
+    </div>
+  </header>
+  <div class="wrap">
+    <div class="kpis" id="kpis"></div>
+    <div class="cols">
+      <div class="panel"><h3>Par ville (code postal)</h3><div id="byCity"></div></div>
+      <div class="panel"><h3>Par secteur</h3><div id="bySector"></div></div>
+    </div>
+    <div class="toolbar">
+      <select id="fPrio" onchange="render()"><option value="">Toutes priorités</option><option>CHAUD</option><option>TIEDE</option><option>FROID</option></select>
+      <select id="fStatus" onchange="render()"><option value="">Tous statuts</option></select>
+      <select id="fCity" onchange="render()"><option value="">Toutes villes</option></select>
+      <input id="fSearch" placeholder="Rechercher…" oninput="render()" />
+      <span class="count" id="count"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Société</th><th>Ville</th><th>Secteur</th><th>Score</th><th>Priorité</th><th>Contact</th><th>Créée</th><th>Statut (suivi)</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty" style="display:none">Aucun lead.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "https://aiforcestudio.app.n8n.cloud/webhook";
+  const STATUSES = ["nouveau","à appeler","email_1_envoyé","email_2_prévu","email_3_prévu","contact_tel_fait","relance","rdv","converti","perdu"];
+  let TOKEN = localStorage.getItem('dna_crm_token') || "";
+  let LEADS = [];
+
+  if (TOKEN) { document.getElementById('gate').style.display='none'; document.getElementById('app').style.display='block'; load(); }
+
+  function login(){
+    const t = document.getElementById('tokenInput').value.trim();
+    if(!t){ return; }
+    TOKEN = t;
+    fetch(API+"/crm-leads?token="+encodeURIComponent(t)).then(r=>r.json()).then(d=>{
+      if(!Array.isArray(d)) throw new Error('bad');
+      localStorage.setItem('dna_crm_token', t);
+      document.getElementById('gate').style.display='none';
+      document.getElementById('app').style.display='block';
+      LEADS=d; boot();
+    }).catch(()=>{ document.getElementById('gateErr').textContent="Token invalide ou service indisponible."; });
+  }
+  function logout(){ localStorage.removeItem('dna_crm_token'); location.reload(); }
+
+  function load(){
+    fetch(API+"/crm-leads?token="+encodeURIComponent(TOKEN)).then(r=>r.json()).then(d=>{ LEADS=Array.isArray(d)?d:[]; boot(); })
+      .catch(()=>{ alert("Erreur de chargement"); });
+  }
+
+  function boot(){
+    // fill status filter
+    const fs=document.getElementById('fStatus'); fs.innerHTML='<option value="">Tous statuts</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
+    const fc=document.getElementById('fCity'); const cities=[...new Set(LEADS.map(l=>l.post_code).filter(Boolean))].sort();
+    fc.innerHTML='<option value="">Toutes villes</option>'+cities.map(c=>`<option>${c}</option>`).join('');
+    renderKpis(); renderBreakdowns(); render();
+  }
+
+  function renderKpis(){
+    const c=n=>LEADS.filter(l=>l.priorite===n).length;
+    const noMail=LEADS.filter(l=>!l.has_email).length;
+    document.getElementById('kpis').innerHTML=`
+      <div class="kpi"><div class="n">${LEADS.length}</div><div class="l">Total leads</div></div>
+      <div class="kpi chaud"><div class="n">${c('CHAUD')}</div><div class="l">🔥 Chauds</div></div>
+      <div class="kpi tiede"><div class="n">${c('TIEDE')}</div><div class="l">Tièdes</div></div>
+      <div class="kpi froid"><div class="n">${c('FROID')}</div><div class="l">Froids</div></div>
+      <div class="kpi tel"><div class="n">${noMail}</div><div class="l">🔴 Sans email (à appeler)</div></div>`;
+  }
+  function bars(map, el){
+    const ent=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const max=Math.max(1,...ent.map(e=>e[1]));
+    el.innerHTML=ent.map(([k,v])=>`<div class="bar"><div class="lab">${k||'—'}</div><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><div class="v">${v}</div></div>`).join('')||'<div class="sub">—</div>';
+  }
+  function renderBreakdowns(){
+    const byC={},byS={};
+    LEADS.forEach(l=>{ byC[l.post_code]=(byC[l.post_code]||0)+1; const s=(l.sector||'—').replace(/^[^\wÀ-ÿ]*/,'').slice(0,22); byS[s]=(byS[s]||0)+1; });
+    bars(byC,document.getElementById('byCity')); bars(byS,document.getElementById('bySector'));
+  }
+
+  function render(){
+    const fp=document.getElementById('fPrio').value, fst=document.getElementById('fStatus').value,
+          fci=document.getElementById('fCity').value, q=document.getElementById('fSearch').value.toLowerCase();
+    let rows=LEADS.filter(l=>(!fp||l.priorite===fp)&&(!fst||l.status===fst)&&(!fci||l.post_code===fci)&&(!q||(l.name||'').toLowerCase().includes(q)));
+    document.getElementById('count').textContent=rows.length+" / "+LEADS.length+" leads";
+    const tb=document.getElementById('rows');
+    document.getElementById('empty').style.display=rows.length?'none':'block';
+    tb.innerHTML=rows.map(l=>{
+      const pb=l.priorite==='CHAUD'?'b-chaud':l.priorite==='TIEDE'?'b-tiede':'b-froid';
+      const contact = l.has_email ? `<span class="mail">✉️ ${l.email}</span>` : `<span class="tel">🔴 ${l.phone||'à appeler (pas d\\'email)'}</span>`;
+      const opts=STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
+      return `<tr>
+        <td><div class="name">${l.name||'?'}</div><div class="sub">${l.ai_action||''}</div></td>
+        <td>${l.post_code||''}</td>
+        <td><span class="sub">${l.sector||'—'}</span></td>
+        <td><span class="score">${l.score??'–'}</span></td>
+        <td><span class="badge ${pb}">${l.priorite||'—'}</span></td>
+        <td>${contact}</td>
+        <td><span class="sub">${(l.registration_date||'').slice(0,10)}</span></td>
+        <td><select class="status" onchange="updateStatus(${l.id},this.value,this)">${opts}</select> <span class="saved" id="sv${l.id}">✓</span></td>
+        <td>${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function updateStatus(id, status, el){
+    fetch(API+"/crm-update",{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:TOKEN,id,status,last_contact_at:new Date().toISOString()})})
+      .then(r=>r.json()).then(()=>{
+        const lead=LEADS.find(x=>x.id===id); if(lead) lead.status=status;
+        const sv=document.getElementById('sv'+id); sv.classList.add('show'); setTimeout(()=>sv.classList.remove('show'),1500);
+      }).catch(()=>alert("Échec de la mise à jour"));
+  }
+</script>
+</body>
+</html>
