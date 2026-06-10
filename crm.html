@@ -185,7 +185,7 @@
     document.getElementById('empty').style.display=rows.length?'none':'block';
     tb.innerHTML=rows.map(l=>{
       const pb=l.priorite==='CHAUD'?'b-chaud':l.priorite==='TIEDE'?'b-tiede':'b-froid';
-      const contact = l.has_email ? `<span class="mail">✉️ ${l.email}</span>` : `<span class="tel">🔴 ${l.phone||'à appeler (pas d\\'email)'}</span>`;
+      const contact = l.has_email ? `<span class="mail">✉️ ${l.email}</span>` : `<span class="tel">🔴 ${l.phone || "à appeler (pas d'email)"}</span>`;
       const opts=STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('');
       return `<tr>
         <td><div class="name">${l.name||'?'}</div><div class="sub">${l.ai_action||''}</div></td>
