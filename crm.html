@@ -80,6 +80,9 @@
   .dsave{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-width:140px}
   .savebtn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:13px}
   .savebtn:hover{background:#0d2b52}
+  .searchlinks{margin-top:9px;font-size:11px;color:var(--muted);font-weight:600}
+  .searchlinks a{display:inline-block;margin:3px 4px 0 0;padding:3px 9px;border:1px solid var(--line);border-radius:7px;color:var(--navy);text-decoration:none;font-weight:700;background:#fff}
+  .searchlinks a:hover{border-color:var(--orange);color:var(--orange)}
   td .tel2{color:#0a2240;font-weight:700;font-size:12px;display:block;margin-top:2px}
   /* ===== MOBILE : tableau -> cartes ===== */
   @media(max-width:720px){
@@ -230,6 +233,8 @@
     tb.innerHTML=rows.map(l=>{
       const pb=l.priorite==='CHAUD'?'b-chaud':l.priorite==='TIEDE'?'b-tiede':'b-froid';
       const phoneShown = l.phone_manual || l.phone;
+      const gq = encodeURIComponent('"'+(l.name||'')+'" '+(l.city||l.post_code||'')+' Belgique');
+      const pdq = encodeURIComponent((l.name||'')+' '+(l.city||l.post_code||''));
       const contact = l.has_email
         ? `<span class="mail">✉️ ${l.email}</span>${phoneShown?`<span class="tel2">📞 ${esc(phoneShown)}</span>`:''}`
         : (phoneShown ? `<span class="tel">📞 ${esc(phoneShown)}</span>` : `<span class="tel">🔴 à appeler (pas d'email)</span>`);
@@ -253,6 +258,12 @@
             ${l.phone?`<div class="hint">BCE : ${esc(l.phone)}</div>`:''}
             ${l.email?`<div class="hint">Email : ${esc(l.email)}</div>`:'<div class="hint">Pas d\'email BCE — à appeler</div>'}
             ${l.website?`<div class="hint">Web : ${esc(l.website)}</div>`:''}
+            <div class="searchlinks">🔎 Trouver le n° :
+              <a href="https://www.google.com/search?q=${gq}+t%C3%A9l%C3%A9phone" target="_blank">Google</a>
+              <a href="https://www.pagesdor.be/recherche?what=${pdq}" target="_blank">Pages d'Or</a>
+              <a href="https://www.facebook.com/search/top?q=${gq}" target="_blank">Facebook</a>
+              <a href="https://www.google.com/maps/search/${gq}" target="_blank">Maps</a>
+            </div>
           </div>
           <div class="dcol">
             <label>📝 Notes libres</label>
