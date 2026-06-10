@@ -118,7 +118,15 @@
   let TOKEN = localStorage.getItem('dna_crm_token') || "";
   let LEADS = [];
 
-  if (TOKEN) { document.getElementById('gate').style.display='none'; document.getElementById('app').style.display='block'; load(); }
+  // Valider avec la touche Entrée
+  document.getElementById('tokenInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); login(); } });
+  // Auto-login si un token est déjà stocké — mais on le revalide (sinon on reste bloqué)
+  if (TOKEN) {
+    fetch(API+"/crm-leads?token="+encodeURIComponent(TOKEN)).then(r=>r.json()).then(d=>{
+      if(Array.isArray(d)){ document.getElementById('gate').style.display='none'; document.getElementById('app').style.display='block'; LEADS=d; boot(); }
+      else { localStorage.removeItem('dna_crm_token'); TOKEN=''; }
+    }).catch(function(){ localStorage.removeItem('dna_crm_token'); TOKEN=''; });
+  }
 
   function login(){
     const t = document.getElementById('tokenInput').value.trim();
