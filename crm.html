@@ -82,6 +82,8 @@
   .dsave{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-width:140px}
   .savebtn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:13px}
   .savebtn:hover{background:#0d2b52}
+  .emailbtn{background:var(--orange);color:var(--navy);border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer;font-size:12.5px}
+  .emailbtn:hover{filter:brightness(1.05)}
   .searchlinks{margin-top:9px;font-size:11px;color:var(--muted);font-weight:600}
   .searchlinks a{display:inline-block;margin:3px 4px 0 0;padding:3px 9px;border:1px solid var(--line);border-radius:7px;color:var(--navy);text-decoration:none;font-weight:700;background:#fff}
   .searchlinks a:hover{border-color:var(--orange);color:var(--orange)}
@@ -258,6 +260,8 @@
           <div class="dcol">
             <label>📞 Téléphone(s) — ajout manuel</label>
             <input id="ph${l.id}" value="${esc(l.phone_manual)}" placeholder="ex. 0470 12 34 56, 02 555 11 22 (plusieurs : virgules)">
+            <label style="margin-top:11px">✉️ Email — ajout manuel</label>
+            <input id="em${l.id}" value="${esc(l.email_manual)}" placeholder="contact@societe.be (requis pour générer le mail)">
             ${l.phone?`<div class="hint">BCE : ${esc(l.phone)}</div>`:''}
             ${l.email?`<div class="hint">Email : ${esc(l.email)}</div>`:'<div class="hint">Pas d\'email BCE — à appeler</div>'}
             ${l.website?`<div class="hint">Web : ${esc(l.website)}</div>`:''}
@@ -274,6 +278,7 @@
           </div>
           <div class="dsave">
             <button class="savebtn" onclick="saveDetail(${l.id})">💾 Enregistrer</button>
+            <button class="emailbtn" onclick="generateEmail(${l.id})">📧 Générer l'email (brouillon)</button>
             <span class="saved" id="dsv${l.id}">✓ enregistré</span>
           </div>
         </div>
@@ -283,13 +288,27 @@
   function toggleDetail(id){ const r=document.getElementById('d'+id); if(r) r.style.display = (r.style.display==='none'?'table-row':'none'); }
   function saveDetail(id){
     const phone_manual=document.getElementById('ph'+id).value.trim();
+    const email_manual=document.getElementById('em'+id).value.trim();
     const notes=document.getElementById('nt'+id).value;
-    fetch(API+"/crm-update",{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:TOKEN,id,phone_manual,notes})})
+    return fetch(API+"/crm-update",{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:TOKEN,id,phone_manual,email_manual,notes})})
       .then(r=>r.json()).then(()=>{
-        const lead=LEADS.find(x=>x.id===id); if(lead){ lead.phone_manual=phone_manual; lead.notes=notes; }
-        const sv=document.getElementById('dsv'+id); sv.classList.add('show'); setTimeout(()=>sv.classList.remove('show'),2000);
+        const lead=LEADS.find(x=>x.id===id); if(lead){ lead.phone_manual=phone_manual; lead.email_manual=email_manual; lead.notes=notes; }
+        const sv=document.getElementById('dsv'+id); if(sv){sv.classList.add('show'); setTimeout(()=>sv.classList.remove('show'),2000);}
       }).catch(()=>alert("Échec de l'enregistrement"));
+  }
+  function generateEmail(id){
+    const lead=LEADS.find(x=>x.id===id);
+    const em=document.getElementById('em'+id).value.trim();
+    const to=(lead && lead.email) || em;
+    if(!to){ alert("Ajoutez d'abord un email (champ ✉️ Email) avant de générer le mail."); return; }
+    if(!confirm("Générer un brouillon de prospection pour « "+(lead?lead.name:'')+" » → "+to+" ?\n\nLe brouillon arrive dans ton Outlook (Brouillons). RIEN n'est envoyé automatiquement.")) return;
+    saveDetail(id)
+      .then(()=>fetch(API+"/crm-draft-email",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:TOKEN,id})}))
+      .then(r=>r.json()).then(d=>{
+        if(d && d.ok){ alert("✅ Brouillon créé dans ton Outlook pour "+(d.to||to)+".\nOuvre tes Brouillons, relis et envoie."); }
+        else { alert("Échec : "+((d&&d.error)||'vérifie que le lead a un email')); }
+      }).catch(()=>alert("Échec de la génération du brouillon"));
   }
 
   function deleteLead(id){
