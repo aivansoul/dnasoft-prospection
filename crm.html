@@ -87,6 +87,8 @@
   .searchlinks{margin-top:9px;font-size:11px;color:var(--muted);font-weight:600}
   .searchlinks a{display:inline-block;margin:3px 4px 0 0;padding:3px 9px;border:1px solid var(--line);border-radius:7px;color:var(--navy);text-decoration:none;font-weight:700;background:#fff}
   .searchlinks a:hover{border-color:var(--orange);color:var(--orange)}
+  .wabtn{display:inline-block;background:#25d366;color:#063d22;text-decoration:none;font-weight:800;font-size:12.5px;padding:8px 14px;border-radius:8px}
+  .wabtn:hover{filter:brightness(1.05)}
   td .tel2{color:#0a2240;font-weight:700;font-size:12px;display:block;margin-top:2px}
   /* ===== MOBILE : tableau -> cartes ===== */
   @media(max-width:720px){
@@ -239,6 +241,9 @@
       const phoneShown = l.phone_manual || l.phone;
       const gq = encodeURIComponent('"'+(l.name||'')+'" '+(l.city||l.post_code||'')+' Belgique');
       const pdq = encodeURIComponent((l.name||'')+' '+(l.city||l.post_code||''));
+      const rawPhone=(l.phone_manual||l.phone||'').replace(/\D/g,'');
+      const waNum = rawPhone ? (rawPhone.indexOf('32')===0?rawPhone:(rawPhone.indexOf('0')===0?'32'+rawPhone.slice(1):rawPhone)) : '';
+      const waMsg = encodeURIComponent("Bonjour, ici DNA Soft Solutions (entreprise familiale belge). Félicitations pour le lancement de "+(l.name||'votre activité')+" ! Nous proposons caisses tactiles, gestion des files et contrôle d'accès 100% sur mesure à prix compétitifs. Une démo gratuite, sans engagement, vous intéresse ?");
       let contact = '';
       if(phoneShown) contact += `<span class="tel2">📞 ${esc(phoneShown)}</span>`;
       if(l.email) contact += `<span class="mail">✉️ ${esc(l.email)}</span>`;
@@ -271,6 +276,7 @@
               <a href="https://www.facebook.com/search/top?q=${gq}" target="_blank">Facebook</a>
               <a href="https://www.google.com/maps/search/${gq}" target="_blank">Maps</a>
             </div>
+            ${waNum?`<div style="margin-top:9px"><a class="wabtn" href="https://wa.me/${waNum}?text=${waMsg}" target="_blank">📱 Contacter par WhatsApp</a></div>`:`<div class="hint" style="margin-top:8px">📱 Ajoutez un téléphone ci-dessus pour activer WhatsApp</div>`}
           </div>
           <div class="dcol">
             <label>📝 Notes libres</label>
