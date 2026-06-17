@@ -256,7 +256,7 @@
         <td data-label="Score"><span class="score">${l.score??'–'}</span></td>
         <td data-label="Priorité"><span class="badge ${pb}">${l.priorite||'—'}</span></td>
         <td data-label="Contact">${contact}</td>
-        <td data-label="Créée"><span class="sub">${(l.registration_date||'').slice(0,10)}</span></td>
+        <td data-label="Créée"><strong style="color:var(--navy);font-size:13px">${(l.registration_date||'').slice(0,10)}</strong></td>
         <td data-label="Statut"><select class="status" onchange="updateStatus(${l.id},this.value,this)">${opts}</select> <span class="saved" id="sv${l.id}">✓</span></td>
         <td data-label="Action" style="white-space:nowrap"><button class="exp" title="Téléphone & notes" onclick="toggleDetail(${l.id})">✏️ Tél/Notes</button> ${l.cbe_url?`<a class="cbe" href="${l.cbe_url}" target="_blank">BCE ↗</a>`:''} <button class="del" title="Supprimer ce lead (incohérent)" onclick="deleteLead(${l.id})">🗑️</button></td>
       </tr>
