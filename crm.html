@@ -284,7 +284,7 @@
           </div>
           <div class="dsave">
             <button class="savebtn" onclick="saveDetail(${l.id})">💾 Enregistrer</button>
-            <button class="emailbtn" onclick="generateEmail(${l.id})">📧 Générer l'email (brouillon)</button>
+            <button class="emailbtn" onclick="generateEmail(${l.id})">📧 Envoyer à l'équipe (validation)</button>
             <span class="saved" id="dsv${l.id}">✓ enregistré</span>
           </div>
         </div>
@@ -308,13 +308,13 @@
     const em=document.getElementById('em'+id).value.trim();
     const to=(lead && lead.email) || em;
     if(!to){ alert("Ajoutez d'abord un email (champ ✉️ Email) avant de générer le mail."); return; }
-    if(!confirm("Générer un brouillon de prospection pour « "+(lead?lead.name:'')+" » → "+to+" ?\n\nLe brouillon arrive dans ton Outlook (Brouillons). RIEN n'est envoyé automatiquement.")) return;
+    if(!confirm("Envoyer cet email de prospection pour « "+(lead?lead.name:'')+" » (prospect : "+to+") à info@dnasoft.be et à toi, pour validation avant envoi au prospect ?")) return;
     saveDetail(id)
       .then(()=>fetch(API+"/crm-draft-email",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:TOKEN,id})}))
       .then(r=>r.json()).then(d=>{
-        if(d && d.ok){ alert("✅ Brouillon créé dans ton Outlook pour "+(d.to||to)+".\nOuvre tes Brouillons, relis et envoie."); }
+        if(d && d.ok){ alert("✅ Email envoyé à info@dnasoft.be et à toi (en copie).\nRelisez, ajustez, puis envoyez au prospect."); }
         else { alert("Échec : "+((d&&d.error)||'vérifie que le lead a un email')); }
-      }).catch(()=>alert("Échec de la génération du brouillon"));
+      }).catch(()=>alert("Échec de l'envoi"));
   }
 
   function deleteLead(id){
